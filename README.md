@@ -2,7 +2,7 @@
 
 An end-to-end AI voice cloning pipeline that fine-tunes [F5-TTS](https://github.com/SWivid/F5-TTS) on ~19 hours of Osho's speeches and serves real-time synthesis through a Next.js web app.
 
-**Live demo:** _coming soon_
+**Live demo:** https://osho-voice.vercel.app
 
 ---
 
