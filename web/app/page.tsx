@@ -94,9 +94,18 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [totalChunks, setTotalChunks] = useState(0);
   const [speed, setSpeed] = useState(1.0);
+  const speedRef = useRef(1.0);
   const stopFlag = useRef(false);
   const pauseFlag = useRef(false);
   const currentAudio = useRef<HTMLAudioElement | null>(null);
+
+  function handleSpeedChange(val: number) {
+    setSpeed(val);
+    speedRef.current = val;
+    if (currentAudio.current) {
+      currentAudio.current.playbackRate = val;
+    }
+  }
 
   useEffect(() => {
     return () => { stopFlag.current = true; };
@@ -106,7 +115,7 @@ export default function Home() {
     const res = await fetch(`${TTS_URL}/synthesize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: chunk, speed }),
+      body: JSON.stringify({ text: chunk, speed: 1.0 }),
     });
     if (!res.ok) throw new Error(await res.text());
     const blob = await res.blob();
@@ -116,6 +125,7 @@ export default function Home() {
   async function playUrl(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
+      audio.playbackRate = speedRef.current;
       currentAudio.current = audio;
       audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
       audio.onerror = reject;
@@ -256,10 +266,9 @@ export default function Home() {
             <input
               type="range" min={0.5} max={1.5} step={0.05}
               value={speed}
-              onChange={(e) => setSpeed(parseFloat(e.target.value))}
+              onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
               className="flex-1"
               style={{ accentColor: "var(--accent)" }}
-              disabled={isActive}
             />
             <span style={{ color: "var(--accent)", fontSize: "0.85rem", whiteSpace: "nowrap" }}>{speed.toFixed(2)}×</span>
           </div>
