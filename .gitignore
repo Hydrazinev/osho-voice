@@ -1,0 +1,25 @@
+# Large data — not committed
+Osho Rec/
+voice-training/dataset/
+voice-training/output/
+f5-training/checkpoints/
+f5-training/data/
+f5-training/vocab_download/
+f5-training/osho_metadata.csv
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.env
+
+# Next.js
+web/.next/
+web/node_modules/
+web/.env.local
+
+# System
+.DS_Store
+.claude/
