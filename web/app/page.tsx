@@ -129,6 +129,9 @@ export default function Home() {
           <p className="text-stone-400 text-sm">
             Paste any text or upload a book — hear it in Osho&apos;s voice
           </p>
+          <p className="text-stone-600 text-xs">
+            First request may take ~2 min to wake up the GPU. Fast after that.
+          </p>
         </div>
 
         <div className="space-y-3">
