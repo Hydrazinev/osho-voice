@@ -1,0 +1,10 @@
+openai-whisper
+torch
+torchaudio
+pydub
+noisereduce
+numpy
+scipy
+tqdm
+TTS>=0.22.0
+trainer
