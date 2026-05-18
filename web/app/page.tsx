@@ -440,14 +440,27 @@ export default function Home() {
       {/* About */}
       <section className="px-4 md:px-8 py-12 md:py-20 max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
-          <div>
-            <p style={{ color: "var(--accent)", fontSize: "0.7rem", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "0.75rem" }}>About</p>
-            <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(1.5rem, 4vw, 2rem)", fontWeight: 400, lineHeight: 1.2, marginBottom: "1rem" }}>
-              Osho (1931–1990)
-            </h2>
-            <p style={{ color: "var(--muted)", lineHeight: 1.8, fontWeight: 300, fontSize: "0.95rem" }}>
-              Born Chandra Mohan Jain in India, Osho was a philosopher, mystic, and one of the most prolific spiritual speakers of the 20th century. Speaking extemporaneously for over two decades, he left behind more than 600 volumes of transcribed lectures spanning Zen, Taoism, Sufism, Western philosophy, and the full breadth of human consciousness.
-            </p>
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <img
+              src="/osho.png"
+              alt="Osho"
+              style={{
+                width: "140px",
+                flexShrink: 0,
+                borderRadius: "4px",
+                filter: "grayscale(20%)",
+                objectFit: "cover",
+              }}
+            />
+            <div>
+              <p style={{ color: "var(--accent)", fontSize: "0.7rem", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "0.75rem" }}>About</p>
+              <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(1.5rem, 4vw, 2rem)", fontWeight: 400, lineHeight: 1.2, marginBottom: "1rem" }}>
+                Osho (1931–1990)
+              </h2>
+              <p style={{ color: "var(--muted)", lineHeight: 1.8, fontWeight: 300, fontSize: "0.95rem" }}>
+                Born Chandra Mohan Jain in India, Osho was a philosopher, mystic, and one of the most prolific spiritual speakers of the 20th century. Speaking extemporaneously for over two decades, he left behind more than 600 volumes of transcribed lectures spanning Zen, Taoism, Sufism, Western philosophy, and the full breadth of human consciousness.
+              </p>
+            </div>
           </div>
           <div className="md:border-l md:pl-8" style={{ borderColor: "var(--border)" }}>
             <p style={{ color: "var(--accent)", fontSize: "0.7rem", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "0.75rem" }}>This Project</p>
