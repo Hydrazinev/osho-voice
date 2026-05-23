@@ -34,53 +34,33 @@ function chunkText(text: string): string[] {
   return chunks;
 }
 
-const COMPARE_TEXT = "Meditation is not concentration. It is a state of pure awareness, a choiceless observation of what is.";
-
-function CompareCard({
-  label,
-  sublabel,
-  endpoint,
-  buttonLabel = "▶  Generate",
-}: {
-  label: string;
-  sublabel: string;
-  endpoint: string;
-  buttonLabel?: string;
-}) {
-  const [url, setUrl] = useState<string | null>(null);
+function CompareAI() {
+  const [aiUrl, setAiUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
 
   async function generate() {
     setLoading(true);
-    setError(false);
     try {
-      const res = await fetch(`${TTS_URL}${endpoint}`, {
+      const res = await fetch(`${TTS_URL}/synthesize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: COMPARE_TEXT, speed: 1.0 }),
+        body: JSON.stringify({ text: "It is the mind that has been trained into Aristotelian logic.", speed: 1.0 }),
       });
-      if (!res.ok) throw new Error();
       const blob = await res.blob();
-      setUrl(URL.createObjectURL(blob));
-    } catch {
-      setError(true);
+      setAiUrl(URL.createObjectURL(blob));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{ background: "#EDE8DF", borderRadius: "6px", padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-      <div>
-        <p style={{ fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.2rem" }}>{label}</p>
-        <p style={{ fontSize: "0.7rem", color: "var(--accent)", fontWeight: 500 }}>{sublabel}</p>
-      </div>
-      <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: "0.9rem", lineHeight: 1.6, color: "var(--foreground)" }}>
-        &ldquo;{COMPARE_TEXT}&rdquo;
+    <div style={{ background: "#EDE8DF", borderRadius: "6px", padding: "1.5rem" }}>
+      <p style={{ fontSize: "0.7rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.75rem" }}>AI Clone</p>
+      <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: "0.95rem", lineHeight: 1.6, marginBottom: "1.25rem", color: "var(--foreground)" }}>
+        &ldquo;It is the mind that has been trained into Aristotelian logic.&rdquo;
       </p>
-      {url ? (
-        <audio controls src={url} style={{ width: "100%" }} />
+      {aiUrl ? (
+        <audio controls src={aiUrl} style={{ width: "100%" }} />
       ) : (
         <button
           onClick={generate}
@@ -95,14 +75,10 @@ function CompareCard({
             cursor: loading ? "wait" : "pointer",
             opacity: loading ? 0.6 : 1,
             fontFamily: "var(--font-inter)",
-            alignSelf: "flex-start",
           }}
         >
-          {loading ? "Generating…" : buttonLabel}
+          {loading ? "Generating…" : "▶  Generate AI version"}
         </button>
-      )}
-      {error && (
-        <p style={{ fontSize: "0.75rem", color: "#C0392B" }}>GPU may be waking up — try again in a moment.</p>
       )}
     </div>
   );
@@ -118,7 +94,6 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [totalChunks, setTotalChunks] = useState(0);
   const [speed, setSpeed] = useState(1.0);
-  const [model, setModel] = useState<"finetuned" | "zeroshot">("finetuned");
   const speedRef = useRef(1.0);
   const stopFlag = useRef(false);
   const pauseFlag = useRef(false);
@@ -137,8 +112,7 @@ export default function Home() {
   }, []);
 
   async function synthesizeChunk(chunk: string): Promise<string> {
-    const endpoint = model === "zeroshot" ? "/synthesize-zeroshot" : "/synthesize";
-    const res = await fetch(`${TTS_URL}${endpoint}`, {
+    const res = await fetch(`${TTS_URL}/synthesize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: chunk, speed: 1.0 }),
@@ -299,38 +273,6 @@ export default function Home() {
             <span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>{text.length.toLocaleString()} chars</span>
           </div>
 
-          {/* Model toggle */}
-          <div className="flex items-center gap-2 mb-4">
-            <span style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", whiteSpace: "nowrap" }}>Model</span>
-            <div className="flex" style={{ border: "1px solid var(--border)", borderRadius: "4px", overflow: "hidden" }}>
-              {(["finetuned", "zeroshot"] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => !isActive && setModel(m)}
-                  disabled={isActive}
-                  style={{
-                    padding: "0.4rem 0.85rem",
-                    fontSize: "0.75rem",
-                    fontFamily: "var(--font-inter)",
-                    border: "none",
-                    borderRight: m === "finetuned" ? "1px solid var(--border)" : "none",
-                    cursor: isActive ? "not-allowed" : "pointer",
-                    background: model === m ? "var(--foreground)" : "transparent",
-                    color: model === m ? "var(--background)" : "var(--muted)",
-                    transition: "background 0.15s, color 0.15s",
-                  }}
-                >
-                  {m === "finetuned" ? "Fine-tuned" : "Zero-shot"}
-                </button>
-              ))}
-            </div>
-            <span style={{ fontSize: "0.72rem", color: "var(--muted)", fontWeight: 300 }}>
-              {model === "finetuned"
-                ? "19h training · accent baked in"
-                : "4s ref clip · base model · accent may drift"}
-            </span>
-          </div>
-
           {/* Speed */}
           <div className="flex items-center gap-3 mb-5">
             <span style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", whiteSpace: "nowrap" }}>Speed</span>
@@ -375,7 +317,7 @@ export default function Home() {
                   fontFamily: "var(--font-inter)",
                 }}
               >
-                ▶  Play {model === "zeroshot" ? "(zero-shot)" : "(fine-tuned)"}
+                ▶  Play
               </button>
             )}
             {isActive && (
@@ -430,44 +372,21 @@ export default function Home() {
 
       {/* Compare */}
       <section style={{ borderTop: "1px solid var(--border)" }} className="px-4 md:px-8 py-12 md:py-20">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <p style={{ color: "var(--accent)", fontSize: "0.7rem", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "0.75rem" }}>Compare</p>
-          <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(1.6rem, 4vw, 2rem)", fontWeight: 400, marginBottom: "0.5rem" }}>Real · Zero-shot · Fine-tuned</h2>
-          <p style={{ color: "var(--muted)", fontSize: "0.85rem", fontWeight: 300, marginBottom: "0.5rem", maxWidth: "54ch", lineHeight: 1.7 }}>
-            Same sentence, three versions. Zero-shot clones the voice from a 10-second clip at inference time — no training.
-            Fine-tuned was trained on 19 hours of audio. Hear the difference the accent makes.
+          <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(1.6rem, 4vw, 2rem)", fontWeight: 400, marginBottom: "0.5rem" }}>Real vs AI</h2>
+          <p style={{ color: "var(--muted)", fontSize: "0.85rem", fontWeight: 300, marginBottom: "2rem" }}>
+            Same sentence — once from the original recording, once from the AI clone.
           </p>
-          <p style={{ color: "var(--accent)", fontSize: "0.8rem", fontWeight: 500, marginBottom: "2rem" }}>
-            ↓ Generate both AI versions to compare
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Card 1 — Real */}
-            <div style={{ background: "#EDE8DF", borderRadius: "6px", padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <div>
-                <p style={{ fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.2rem" }}>Original Recording</p>
-                <p style={{ fontSize: "0.7rem", color: "var(--accent)", fontWeight: 500 }}>The real voice</p>
-              </div>
-              <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: "0.9rem", lineHeight: 1.6, color: "var(--foreground)" }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div style={{ background: "#EDE8DF", borderRadius: "6px", padding: "1.25rem" }}>
+              <p style={{ fontSize: "0.7rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.75rem" }}>Original Voice</p>
+              <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: "0.9rem", lineHeight: 1.6, marginBottom: "1.25rem" }}>
                 &ldquo;It is the mind that has been trained into Aristotelian logic.&rdquo;
               </p>
               <audio controls src="/osho_real.wav" style={{ width: "100%" }} />
             </div>
-
-            {/* Card 2 — Zero-shot */}
-            <CompareCard
-              label="Zero-shot Clone"
-              sublabel="4-second ref clip · base model · no training"
-              endpoint="/synthesize-zeroshot"
-              buttonLabel="▶  Generate zero-shot"
-            />
-
-            {/* Card 3 — Fine-tuned */}
-            <CompareCard
-              label="Fine-tuned Clone"
-              sublabel="19 hours of training · accent baked in"
-              endpoint="/synthesize"
-              buttonLabel="▶  Generate fine-tuned"
-            />
+            <CompareAI />
           </div>
         </div>
       </section>
@@ -478,7 +397,7 @@ export default function Home() {
           <p style={{ color: "var(--accent)", fontSize: "0.7rem", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "0.75rem" }}>Process</p>
           <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(1.6rem, 4vw, 2rem)", fontWeight: 400, marginBottom: "0.5rem" }}>How it was built</h2>
           <p style={{ color: "var(--muted)", fontSize: "0.85rem", fontWeight: 300, marginBottom: "3rem", maxWidth: "52ch", lineHeight: 1.7 }}>
-            The obvious approach didn&apos;t work. You can hear exactly why in the Compare section above.
+            The obvious approach didn&apos;t work. Here&apos;s what it took to actually get the accent right.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
             <div>
