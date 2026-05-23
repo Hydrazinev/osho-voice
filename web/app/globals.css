@@ -6,6 +6,10 @@
   --accent: #8B5E3C;
   --muted: #9A8F83;
   --border: #D9D0C4;
+
+  /* Strong easing curves — built-in CSS easings are too weak */
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 body {
@@ -13,4 +17,85 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ── Button press feedback ─────────────────────────────────────────────
+   scale(0.97) on :active gives instant tactile feedback.
+   Nothing pressable should be missing this.
+   Transition on transform only — never `all`. */
+.btn {
+  transition: transform 160ms var(--ease-out), opacity 160ms var(--ease-out);
+  -webkit-user-select: none;
+  user-select: none;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.btn:disabled {
+  cursor: not-allowed;
+}
+
+/* ── Hover states — only on real pointer devices ───────────────────────
+   Touch devices trigger :hover on tap — gate with media query. */
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:not(:disabled):hover {
+    opacity: 0.86;
+  }
+  .btn-ghost:not(:disabled):hover {
+    background: rgba(26, 23, 20, 0.05) !important;
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(26, 23, 20, 0.09);
+  }
+}
+
+/* Card lift — transitions on transform + shadow only */
+.card-lift {
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+}
+
+/* ── Textarea focus ring ───────────────────────────────────────────────
+   Smooth border + shadow on focus instead of browser default outline. */
+.textarea-field {
+  transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+}
+.textarea-field:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.13);
+}
+
+/* ── Status message fade-in ────────────────────────────────────────────
+   Elements appearing without transition feel broken. */
+.fade-up {
+  animation: fadeUp 220ms var(--ease-out) both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ── Nav sticky blur ───────────────────────────────────────────────────
+   Backdrop blur communicates layering without a hard shadow. */
+.nav-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background: rgba(244, 239, 230, 0.88) !important;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Progress bar ──────────────────────────────────────────────────────
+   Constant motion = linear. ease on a progress bar feels like it's
+   slowing down — which signals "almost done" prematurely. */
+.progress-bar {
+  transition: width 0.45s linear;
+}
+
+/* ── Audio player fade-in ──────────────────────────────────────────────
+   Audio controls appearing instantly is jarring. Fade in gently. */
+audio {
+  animation: fadeUp 250ms var(--ease-out) both;
 }

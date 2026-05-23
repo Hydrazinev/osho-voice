@@ -54,7 +54,7 @@ function CompareAI() {
   }
 
   return (
-    <div style={{ background: "#EDE8DF", borderRadius: "6px", padding: "1.5rem" }}>
+    <div className="card-lift" style={{ background: "#EDE8DF", borderRadius: "6px", padding: "1.5rem" }}>
       <p style={{ fontSize: "0.7rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.75rem" }}>AI Clone</p>
       <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: "0.95rem", lineHeight: 1.6, marginBottom: "1.25rem", color: "var(--foreground)" }}>
         &ldquo;It is the mind that has been trained into Aristotelian logic.&rdquo;
@@ -65,6 +65,7 @@ function CompareAI() {
         <button
           onClick={generate}
           disabled={loading}
+          className="btn btn-primary"
           style={{
             padding: "0.6rem 1.25rem",
             background: "var(--foreground)",
@@ -72,8 +73,7 @@ function CompareAI() {
             border: "none",
             borderRadius: "4px",
             fontSize: "0.8rem",
-            cursor: loading ? "wait" : "pointer",
-            opacity: loading ? 0.6 : 1,
+            opacity: loading ? 0.5 : 1,
             fontFamily: "var(--font-inter)",
           }}
         >
@@ -142,7 +142,6 @@ export default function Home() {
     setProgress(0);
     setStatus("loading");
     try {
-      // Kick off synthesis of first chunk immediately
       let upNext: Promise<string> = synthesizeChunk(chunks[0]);
 
       for (let i = 0; i < chunks.length; i++) {
@@ -150,10 +149,8 @@ export default function Home() {
         setProgress(i + 1);
         setStatus("loading");
 
-        // Await the chunk that was already being synthesized in background
         const url = await upNext;
 
-        // While we play this chunk, synthesize the next one in parallel
         if (i + 1 < chunks.length) {
           upNext = synthesizeChunk(chunks[i + 1]);
         }
@@ -208,8 +205,8 @@ export default function Home() {
   return (
     <main style={{ background: "var(--background)", color: "var(--foreground)" }} className="min-h-screen">
 
-      {/* Nav */}
-      <nav className="flex justify-between items-center px-4 md:px-8 py-5 border-b" style={{ borderColor: "var(--border)" }}>
+      {/* Nav — sticky with backdrop blur; communicates layering */}
+      <nav className="nav-sticky flex justify-between items-center px-4 md:px-8 py-5">
         <span style={{ fontFamily: "var(--font-playfair)", fontSize: "1.05rem", letterSpacing: "0.05em" }}>
           Osho Speaks
         </span>
@@ -244,7 +241,9 @@ export default function Home() {
             First request wakes the GPU (~2 min). Fast after that.
           </p>
 
+          {/* Textarea — smooth focus ring instead of browser default */}
           <textarea
+            className="textarea-field"
             style={{
               width: "100%",
               background: "#F4EFE6",
@@ -266,7 +265,10 @@ export default function Home() {
           />
 
           <div className="flex items-center justify-between mt-3 mb-5">
-            <label style={{ cursor: "pointer", fontSize: "0.8rem", color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: "3px" }}>
+            <label
+              className="btn"
+              style={{ fontSize: "0.8rem", color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: "3px" }}
+            >
               Upload .txt file
               <input type="file" accept=".txt" className="hidden" onChange={handleFileUpload} disabled={isActive} />
             </label>
@@ -286,11 +288,14 @@ export default function Home() {
             <span style={{ color: "var(--accent)", fontSize: "0.85rem", whiteSpace: "nowrap" }}>{speed.toFixed(2)}×</span>
           </div>
 
-          {/* Progress */}
+          {/* Progress — linear transition; ease implies "almost done" prematurely */}
           {isActive && (
             <div className="mb-5">
               <div style={{ height: "1px", background: "var(--border)", borderRadius: "1px", overflow: "hidden" }}>
-                <div style={{ height: "100%", background: "var(--accent)", width: `${(progress / totalChunks) * 100}%`, transition: "width 0.5s ease" }} />
+                <div
+                  className="progress-bar"
+                  style={{ height: "100%", background: "var(--accent)", width: `${(progress / totalChunks) * 100}%` }}
+                />
               </div>
               <p style={{ color: "var(--muted)", fontSize: "0.75rem", marginTop: "0.5rem", textAlign: "center" }}>
                 {status === "loading" ? "Synthesizing…" : status === "paused" ? "Paused" : "Playing…"} &nbsp;{progress} / {totalChunks}
@@ -304,6 +309,7 @@ export default function Home() {
               <button
                 onClick={handlePlay}
                 disabled={!text.trim()}
+                className="btn btn-primary"
                 style={{
                   flex: 1,
                   padding: "0.85rem",
@@ -312,7 +318,6 @@ export default function Home() {
                   border: "none",
                   borderRadius: "4px",
                   fontSize: "0.9rem",
-                  cursor: text.trim() ? "pointer" : "not-allowed",
                   opacity: text.trim() ? 1 : 0.4,
                   fontFamily: "var(--font-inter)",
                 }}
@@ -325,6 +330,7 @@ export default function Home() {
                 <button
                   onClick={handlePause}
                   disabled={status === "loading"}
+                  className="btn btn-primary"
                   style={{
                     flex: 1,
                     padding: "0.85rem",
@@ -333,7 +339,6 @@ export default function Home() {
                     border: "none",
                     borderRadius: "4px",
                     fontSize: "0.9rem",
-                    cursor: "pointer",
                     opacity: status === "loading" ? 0.4 : 1,
                     fontFamily: "var(--font-inter)",
                   }}
@@ -342,6 +347,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={handleStop}
+                  className="btn btn-ghost"
                   style={{
                     padding: "0.85rem 1.25rem",
                     background: "transparent",
@@ -349,7 +355,6 @@ export default function Home() {
                     border: "1px solid var(--border)",
                     borderRadius: "4px",
                     fontSize: "0.9rem",
-                    cursor: "pointer",
                     fontFamily: "var(--font-inter)",
                   }}
                 >
@@ -359,11 +364,14 @@ export default function Home() {
             )}
           </div>
 
+          {/* Status messages — fade in so they don't pop */}
           {status === "done" && (
-            <p style={{ textAlign: "center", color: "var(--muted)", fontSize: "0.85rem", marginTop: "1rem" }}>Finished reading.</p>
+            <p key="done" className="fade-up" style={{ textAlign: "center", color: "var(--muted)", fontSize: "0.85rem", marginTop: "1rem" }}>
+              Finished reading.
+            </p>
           )}
           {status === "error" && (
-            <p style={{ textAlign: "center", color: "#C0392B", fontSize: "0.85rem", marginTop: "1rem" }}>
+            <p key="error" className="fade-up" style={{ textAlign: "center", color: "#C0392B", fontSize: "0.85rem", marginTop: "1rem" }}>
               Could not reach the TTS service. The GPU may be waking up — try again in a moment.
             </p>
           )}
@@ -379,7 +387,7 @@ export default function Home() {
             Same sentence — once from the original recording, once from the AI clone.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div style={{ background: "#EDE8DF", borderRadius: "6px", padding: "1.25rem" }}>
+            <div className="card-lift" style={{ background: "#EDE8DF", borderRadius: "6px", padding: "1.25rem" }}>
               <p style={{ fontSize: "0.7rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.75rem" }}>Original Voice</p>
               <p style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", fontSize: "0.9rem", lineHeight: 1.6, marginBottom: "1.25rem" }}>
                 &ldquo;It is the mind that has been trained into Aristotelian logic.&rdquo;
