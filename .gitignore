@@ -23,3 +23,4 @@ web/.env.local
 # System
 .DS_Store
 .claude/
+CLAUDE.md
