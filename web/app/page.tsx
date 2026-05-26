@@ -18,6 +18,30 @@ const QUOTES = [
   "Whenever you are in doubt, existence has a way of making things clear to you — if you are open.",
 ];
 
+function writeString(view: DataView, offset: number, str: string) {
+  for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+}
+
+function encodeWAV(buffer: AudioBuffer): ArrayBuffer {
+  const samples = buffer.getChannelData(0);
+  const byteLen = 44 + samples.length * 2;
+  const ab = new ArrayBuffer(byteLen);
+  const v = new DataView(ab);
+  writeString(v, 0, "RIFF"); v.setUint32(4, byteLen - 8, true);
+  writeString(v, 8, "WAVE"); writeString(v, 12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, 1, true); v.setUint32(24, buffer.sampleRate, true);
+  v.setUint32(28, buffer.sampleRate * 2, true); v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true); writeString(v, 36, "data");
+  v.setUint32(40, samples.length * 2, true);
+  let off = 44;
+  for (let i = 0; i < samples.length; i++, off += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return ab;
+}
+
 function chunkText(text: string): string[] {
   const sentences = text.match(/[^.!?]+[.!?]+[\s]*/g) ?? [text];
   const chunks: string[] = [];
@@ -98,6 +122,8 @@ export default function Home() {
   const stopFlag = useRef(false);
   const pauseFlag = useRef(false);
   const currentAudio = useRef<HTMLAudioElement | null>(null);
+  const downloadBlobs = useRef<Blob[]>([]);
+  const [downloading, setDownloading] = useState(false);
 
   function handleSpeedChange(val: number) {
     setSpeed(val);
@@ -111,6 +137,20 @@ export default function Home() {
     return () => { stopFlag.current = true; };
   }, []);
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (status === "playing" || status === "paused") handlePause();
+        else if ((status === "idle" || status === "done" || status === "error") && text.trim()) handlePlay();
+      }
+      if (e.code === "Escape" && (status === "loading" || status === "playing" || status === "paused")) handleStop();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [status, text]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function synthesizeChunk(chunk: string): Promise<string> {
     const res = await fetch(`${TTS_URL}/synthesize`, {
       method: "POST",
@@ -119,6 +159,7 @@ export default function Home() {
     });
     if (!res.ok) throw new Error(await res.text());
     const blob = await res.blob();
+    downloadBlobs.current.push(blob);
     return URL.createObjectURL(blob);
   }
 
@@ -133,8 +174,35 @@ export default function Home() {
     });
   }
 
+  async function handleDownload() {
+    if (downloadBlobs.current.length === 0) return;
+    setDownloading(true);
+    try {
+      const ctx = new AudioContext();
+      const buffers = await Promise.all(
+        downloadBlobs.current.map(async (blob) => {
+          const ab = await blob.arrayBuffer();
+          return ctx.decodeAudioData(ab);
+        })
+      );
+      const totalLen = buffers.reduce((s, b) => s + b.length, 0);
+      const merged = ctx.createBuffer(1, totalLen, buffers[0].sampleRate);
+      const ch = merged.getChannelData(0);
+      let offset = 0;
+      for (const buf of buffers) { ch.set(buf.getChannelData(0), offset); offset += buf.length; }
+      await ctx.close();
+      const url = URL.createObjectURL(new Blob([encodeWAV(merged)], { type: "audio/wav" }));
+      const a = document.createElement("a");
+      a.href = url; a.download = "osho-voice.wav"; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   async function handlePlay() {
     if (!text.trim()) return;
+    downloadBlobs.current = [];
     stopFlag.current = false;
     pauseFlag.current = false;
     const chunks = chunkText(text);
@@ -192,15 +260,7 @@ export default function Home() {
     }
   }
 
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setText(ev.target?.result as string);
-    reader.readAsText(file);
-  }
-
-  const isActive = status === "loading" || status === "playing" || status === "paused";
+const isActive = status === "loading" || status === "playing" || status === "paused";
 
   return (
     <main style={{ background: "var(--background)", color: "var(--foreground)" }} className="min-h-screen">
@@ -261,14 +321,7 @@ export default function Home() {
             disabled={isActive}
           />
 
-          <div className="flex items-center justify-between mt-3 mb-5">
-            <label
-              className="btn"
-              style={{ fontSize: "0.8rem", color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: "3px" }}
-            >
-              Upload .txt file
-              <input type="file" accept=".txt" className="hidden" onChange={handleFileUpload} disabled={isActive} />
-            </label>
+          <div className="flex justify-end mt-3 mb-5">
             <span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>{text.length.toLocaleString()} chars</span>
           </div>
 
@@ -363,9 +416,17 @@ export default function Home() {
 
           {/* Status messages — fade in so they don't pop */}
           {status === "done" && (
-            <p key="done" className="fade-up" style={{ textAlign: "center", color: "var(--muted)", fontSize: "0.85rem", marginTop: "1rem" }}>
-              Finished reading.
-            </p>
+            <div key="done" className="fade-up" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1rem", marginTop: "1rem" }}>
+              <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Finished reading.</p>
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="btn"
+                style={{ fontSize: "0.8rem", color: "var(--accent)", border: "1px solid var(--border)", borderRadius: "4px", padding: "0.35rem 0.85rem", background: "transparent", fontFamily: "var(--font-inter)", opacity: downloading ? 0.5 : 1 }}
+              >
+                {downloading ? "Preparing…" : "↓ Download WAV"}
+              </button>
+            </div>
           )}
           {status === "error" && (
             <p key="error" className="fade-up" style={{ textAlign: "center", color: "#C0392B", fontSize: "0.85rem", marginTop: "1rem" }}>
