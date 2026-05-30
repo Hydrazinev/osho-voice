@@ -15,9 +15,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Osho Speaks",
+  title: "PageSpeaks — Hear Any Text in Multiple Voices",
   description:
-    "Hear any text read aloud in Osho's voice — fine-tuned AI voice clone trained on 19 hours of his lectures.",
+    "PageSpeaks brings text to life with AI voice clones of multiple speakers. Fine-tuned on thousands of hours of real audio.",
 };
 
 export default function RootLayout({

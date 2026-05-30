@@ -2,7 +2,7 @@
 
 > Paste any text. Hear it in your chosen voice — fine-tuned AI voice clones of multiple speakers.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-osho--voice.vercel.app-black?style=for-the-badge&logo=vercel)](https://osho-voice.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-pagespeaks.vercel.app-black?style=for-the-badge&logo=vercel)](https://pagespeaks.vercel.app)
 [![Model](https://img.shields.io/badge/Model-HuggingFace-orange?style=for-the-badge&logo=huggingface)](https://huggingface.co/Hydrazinenv/osho-tts-model)
 [![GPU](https://img.shields.io/badge/Inference-Modal%20T4%20GPU-purple?style=for-the-badge)](https://modal.com)
 
@@ -161,4 +161,4 @@ npm run dev             # → http://localhost:3000
 
 Each fine-tuned voice model captures the speaker's unique accent, cadence, and speech patterns noticeably better than zero-shot synthesis. Fine-tuning on hours of speaker-specific audio bakes phoneme-level details into the model weights.
 
-**Try the [live demo](https://osho-voice.vercel.app)** — paste any text, select a voice, and hear your words read aloud in that speaker's voice. Compare to real recordings side-by-side.
+**Try the [live demo](https://pagespeaks.vercel.app)** — paste any text, select a voice, and hear your words read aloud in that speaker's voice. Compare to real recordings side-by-side.
