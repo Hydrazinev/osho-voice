@@ -1,8 +1,0 @@
-fastapi
-uvicorn[standard]
-TTS>=0.22.0
-torch
-torchaudio
-python-multipart
-pydub
-soundfile

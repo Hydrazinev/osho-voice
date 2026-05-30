@@ -1,11 +1,23 @@
-# Large data — not committed
+# Audio source files — large, not committed
 Osho Rec/
+Morgan Rec/
+
+# Generated training data — large, not committed
 voice-training/dataset/
-voice-training/output/
+voice-training/*.py
 f5-training/checkpoints/
 f5-training/data/
 f5-training/vocab_download/
+f5-training/*.ipynb
+f5-training/*.py
 f5-training/osho_metadata.csv
+f5-training/morgan_metadata.csv
+f5-training/train.log
+f5-training/train_morgan.log
+
+# Generated outputs — not committed
+graphify-out/
+docs/superpowers/
 
 # Python
 venv/
@@ -19,6 +31,10 @@ __pycache__/
 web/.next/
 web/node_modules/
 web/.env.local
+
+# Sensitive / local
+youtube.com_cookies.txt
+cookies.txt
 
 # System
 .DS_Store

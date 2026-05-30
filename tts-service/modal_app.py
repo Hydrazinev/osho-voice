@@ -9,8 +9,26 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-MODEL_REPO = "Hydrazinenv/osho-tts-model"
-REF_TEXT   = "It is the mind that has been trained into Aristotelian logic."
+# ── Speaker registry ─────────────────────────────────────────────────────────
+# To add a new speaker:
+#   1. Train an F5-TTS model and upload to HuggingFace
+#   2. Add an entry here with repo, model file, ref audio filename, and ref text
+#   3. Re-deploy: modal deploy tts-service/modal_app.py
+SPEAKERS = {
+    "osho": {
+        "repo": "Hydrazinenv/osho-tts-model",
+        "model_file": "model_last.pt",
+        "ref_audio": "ref_01.wav",
+        "ref_text": "It is the mind that has been trained into Aristotelian logic.",
+    },
+    "morgan": {
+        "repo": "Hydrazinenv/morgan-tts-model",
+        "model_file": "model_last.pt",
+        "ref_audio": "ref_morgan_short.wav",
+        "ref_text": "How did the universe begin? We've all heard of the Big Bang, but how do we really know that's the way it was? I mean, after all, nobody was around to see it happen.",
+        "nfe_step": 48,
+    },
+}
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
@@ -36,31 +54,47 @@ class OshoTTS:
         os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
         from pathlib import Path
         from huggingface_hub import hf_hub_download
-        from f5_tts.api import F5TTS
         import shutil
 
-        ckpt_path = Path("/models/model_last.pt")
-        ref_path  = Path("/models/ref_01.wav")
+        # Pre-download all speaker assets into /models/<speaker>/
+        for speaker, cfg in SPEAKERS.items():
+            speaker_dir = Path(f"/models/{speaker}")
+            speaker_dir.mkdir(parents=True, exist_ok=True)
 
-        if not ckpt_path.exists():
-            print("Downloading checkpoint from HF Hub...")
-            src = hf_hub_download(MODEL_REPO, "model_last.pt")
-            shutil.copy(src, ckpt_path)
-            volume.commit()
+            ckpt_path = speaker_dir / cfg["model_file"]
+            ref_path = speaker_dir / cfg["ref_audio"]
 
-        if not ref_path.exists():
-            src = hf_hub_download(MODEL_REPO, "ref_01.wav")
-            shutil.copy(src, ref_path)
-            volume.commit()
+            if not ckpt_path.exists():
+                print(f"Downloading {speaker} checkpoint from HF Hub...")
+                src = hf_hub_download(cfg["repo"], cfg["model_file"])
+                shutil.copy(src, ckpt_path)
 
-        print("Loading F5-TTS model...")
-        self.tts = F5TTS(ckpt_file=str(ckpt_path), device="cuda")
-        self.ref = str(ref_path)
-        print("Model ready!")
+            if not ref_path.exists():
+                print(f"Downloading {speaker} reference audio from HF Hub...")
+                src = hf_hub_download(cfg["repo"], cfg["ref_audio"])
+                shutil.copy(src, ref_path)
+
+        volume.commit()
+
+        # Lazy model cache — models load on first request to conserve VRAM
+        self._models: dict = {}
+        print("Speaker assets ready. Models will load on first request.")
+
+    def _get_model(self, speaker: str):
+        if speaker not in self._models:
+            from pathlib import Path
+            from f5_tts.api import F5TTS
+
+            cfg = SPEAKERS[speaker]
+            ckpt_path = str(Path(f"/models/{speaker}") / cfg["model_file"])
+            print(f"Loading {speaker} model into GPU...")
+            self._models[speaker] = F5TTS(ckpt_file=ckpt_path, device="cuda")
+            print(f"{speaker} model ready.")
+        return self._models[speaker]
 
     @modal.asgi_app()
     def web(self):
-        fastapi_app = FastAPI(title="Osho TTS")
+        fastapi_app = FastAPI(title="Voice TTS")
         fastapi_app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
@@ -68,16 +102,16 @@ class OshoTTS:
             allow_headers=["*"],
         )
 
-        tts = self.tts
-        ref = self.ref
+        get_model = self._get_model
 
         class SynthRequest(BaseModel):
             text: str
             speed: float = 1.0
+            speaker: str = "osho"
 
         @fastapi_app.get("/health")
         def health():
-            return {"status": "ok"}
+            return {"status": "ok", "speakers": list(SPEAKERS.keys())}
 
         @fastapi_app.post("/synthesize")
         async def synthesize(req: SynthRequest):
@@ -85,13 +119,20 @@ class OshoTTS:
                 raise HTTPException(400, "Text is empty")
             if len(req.text) > 5000:
                 raise HTTPException(400, "Text too long (max 5000 chars)")
+            if req.speaker not in SPEAKERS:
+                raise HTTPException(400, f"Unknown speaker '{req.speaker}'. Valid: {list(SPEAKERS.keys())}")
+
+            cfg = SPEAKERS[req.speaker]
+            tts = get_model(req.speaker)
+            ref_file = str(f"/models/{req.speaker}/{cfg['ref_audio']}")
+            ref_text = cfg["ref_text"]
 
             wav, sr, _ = tts.infer(
-                ref_file=ref,
-                ref_text=REF_TEXT,
+                ref_file=ref_file,
+                ref_text=ref_text,
                 gen_text=req.text,
                 speed=req.speed,
-                nfe_step=32,
+                nfe_step=cfg.get("nfe_step", 32),
             )
             if isinstance(wav, torch.Tensor):
                 wav = wav.cpu().numpy()

@@ -1,15 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F4EFE6;
-  --foreground: #1A1714;
-  --accent: #8B5E3C;
-  --muted: #9A8F83;
-  --border: #D9D0C4;
+  --background: #f4efe6;
+  --foreground: #1a1714;
+  --accent: #8b5e3c;
+  --muted: #9a8f83;
+  --border: #d9d0c4;
+  --card-bg: #ede8df;
+  --nav-bg: rgba(244, 239, 230, 0.88);
+  --ghost-hover: rgba(26, 23, 20, 0.05);
+  --focus-ring: rgba(139, 94, 60, 0.13);
+  --card-shadow: rgba(26, 23, 20, 0.09);
+  --grain-opacity: 0.028;
+  --grain-blend: multiply;
 
-  /* Strong easing curves — built-in CSS easings are too weak */
-  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* ── Voice themes ──────────────────────────────────────────────────────── */
+[data-voice="osho"] {
+  --background: #f4efe6;
+  --foreground: #1a1714;
+  --accent: #8b5e3c;
+  --muted: #9a8f83;
+  --border: #d9d0c4;
+  --card-bg: #ede8df;
+  --nav-bg: rgba(244, 239, 230, 0.88);
+  --ghost-hover: rgba(26, 23, 20, 0.05);
+  --focus-ring: rgba(139, 94, 60, 0.13);
+  --card-shadow: rgba(26, 23, 20, 0.09);
+  --grain-opacity: 0.028;
+  --grain-blend: multiply;
+}
+
+[data-voice="morgan"] {
+  --background: #0d0f14;
+  --foreground: #f0ede8;
+  --accent: #c9a84c;
+  --muted: #7a8090;
+  --border: #2a2d38;
+  --card-bg: #1a1d26;
+  --nav-bg: rgba(13, 15, 20, 0.92);
+  --ghost-hover: rgba(240, 237, 232, 0.08);
+  --focus-ring: rgba(201, 168, 76, 0.2);
+  --card-shadow: rgba(0, 0, 0, 0.4);
+  --grain-opacity: 0.045;
+  --grain-blend: screen;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -17,14 +58,35 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition:
+    background 400ms var(--ease-out),
+    color 400ms var(--ease-out);
 }
 
-/* ── Button press feedback ─────────────────────────────────────────────
-   scale(0.97) on :active gives instant tactile feedback.
-   Nothing pressable should be missing this.
-   Transition on transform only — never `all`. */
+/* ── Film grain / paper texture overlay ───────────────────────────────────
+   SVG feTurbulence gives physical texture without any images.
+   Osho = paper grain (multiply). Morgan = film grain (screen). */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 220px 220px;
+  transition: opacity 400ms var(--ease-out);
+}
+
+/* ── Button press feedback ─────────────────────────────────────────────── */
 .btn {
-  transition: transform 160ms var(--ease-out), opacity 160ms var(--ease-out);
+  transition:
+    transform 160ms var(--ease-out),
+    opacity 160ms var(--ease-out);
   -webkit-user-select: none;
   user-select: none;
 }
@@ -35,67 +97,190 @@ body {
   cursor: not-allowed;
 }
 
-/* ── Hover states — only on real pointer devices ───────────────────────
-   Touch devices trigger :hover on tap — gate with media query. */
+/* ── Hover states — only on real pointer devices ────────────────────────── */
 @media (hover: hover) and (pointer: fine) {
   .btn-primary:not(:disabled):hover {
     opacity: 0.86;
   }
   .btn-ghost:not(:disabled):hover {
-    background: rgba(26, 23, 20, 0.05) !important;
+    background: var(--ghost-hover) !important;
   }
   .card-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(26, 23, 20, 0.09);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px var(--card-shadow);
   }
 }
 
-/* Card lift — transitions on transform + shadow only */
+/* Card lift */
 .card-lift {
-  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+  transition:
+    transform 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
 }
 
-/* ── Textarea focus ring ───────────────────────────────────────────────
-   Smooth border + shadow on focus instead of browser default outline. */
+/* ── Textarea focus ring ─────────────────────────────────────────────────── */
 .textarea-field {
-  transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+  transition:
+    border-color 150ms var(--ease-out),
+    box-shadow 150ms var(--ease-out);
 }
 .textarea-field:focus {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.13);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
-/* ── Status message fade-in ────────────────────────────────────────────
-   Elements appearing without transition feel broken. */
+/* ── Fade-up animation ───────────────────────────────────────────────────── */
 .fade-up {
   animation: fadeUp 220ms var(--ease-out) both;
 }
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: translateY(0);   }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* ── Nav sticky blur ───────────────────────────────────────────────────
-   Backdrop blur communicates layering without a hard shadow. */
+/* ── Hero reveal — staggered entrance ───────────────────────────────────── */
+.hero-reveal {
+  animation: heroReveal 700ms var(--ease-out) both;
+}
+.hero-reveal-delay-1 {
+  animation-delay: 100ms;
+}
+.hero-reveal-delay-2 {
+  animation-delay: 220ms;
+}
+.hero-reveal-delay-3 {
+  animation-delay: 340ms;
+}
+
+@keyframes heroReveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Nav sticky blur ─────────────────────────────────────────────────────── */
 .nav-sticky {
   position: sticky;
   top: 0;
   z-index: 50;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  background: rgba(244, 239, 230, 0.88) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: var(--nav-bg) !important;
   border-bottom: 1px solid var(--border);
+  transition:
+    background 400ms var(--ease-out),
+    border-color 400ms var(--ease-out);
 }
 
-/* ── Progress bar ──────────────────────────────────────────────────────
-   Constant motion = linear. ease on a progress bar feels like it's
-   slowing down — which signals "almost done" prematurely. */
+/* ── Progress bar ────────────────────────────────────────────────────────── */
 .progress-bar {
   transition: width 0.45s linear;
 }
 
-/* ── Audio player fade-in ──────────────────────────────────────────────
-   Audio controls appearing instantly is jarring. Fade in gently. */
+/* ── Audio player fade-in ────────────────────────────────────────────────── */
 audio {
   animation: fadeUp 250ms var(--ease-out) both;
+}
+
+/* ── Decorative section rule ─────────────────────────────────────────────── */
+.section-rule {
+  width: 2.5rem;
+  height: 2px;
+  background: var(--accent);
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+}
+
+/* ── Custom range slider ───────────────────────────────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 120ms var(--ease-out);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 120ms var(--ease-out);
+}
+
+input[type="range"]::-moz-range-track {
+  background: transparent;
+  border: none;
+}
+
+/* ── Custom scrollbar ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+  opacity: 0.6;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  opacity: 0.8;
+}
+
+/* ── Textarea placeholder ──────────────────────────────────────────────────── */
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* ── Scroll indicator animation ────────────────────────────────────────────── */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+.scroll-indicator {
+  animation: bounce 2s infinite;
 }

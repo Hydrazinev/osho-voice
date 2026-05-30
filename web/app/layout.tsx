@@ -16,7 +16,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Osho Speaks",
-  description: "Hear any text read aloud in Osho's voice — fine-tuned AI voice clone trained on 19 hours of his lectures.",
+  description:
+    "Hear any text read aloud in Osho's voice — fine-tuned AI voice clone trained on 19 hours of his lectures.",
 };
 
 export default function RootLayout({
@@ -26,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
-      <body>{children}</body>
+      <body data-voice="osho">{children}</body>
     </html>
   );
 }
